@@ -12,6 +12,34 @@ supplements it.
 
 ---
 
+## 0. Learning Project Principles
+
+This is a guided learning project. The author is learning Go from scratch
+but has 20 years of experience across C/C++/C#/JavaScript/Python.
+
+**Implementation plan must follow these principles:**
+
+- **Small step-by-step increments.** Each plan step should be a single
+  focused concept or file — small enough to absorb in one sitting. Favor
+  many small steps over few large ones.
+- **Explain Go idioms, not programming basics.** Skip explanations of
+  general concepts (types, functions, control flow, error handling as a
+  concept). DO explain Go-specific things: goroutines, channels, interfaces,
+  embedding, struct tags, `defer`, multiple return values, the `internal/`
+  package convention, how `database/sql` connection pooling works, etc.
+- **Call out Go-vs-other-language differences.** Where Go's approach differs
+  notably from C/C++/C#/JS/Python (e.g., error handling via return values
+  not exceptions, no classes/inheritance, implicit interfaces, package-level
+  visibility via capitalization), note the contrast briefly.
+- **Pause for questions.** Each step ends with an explicit invitation to
+  ask questions before moving on. Don't rush ahead.
+- **Show, don't just tell.** When introducing a Go pattern, show the actual
+  code in context rather than abstract examples.
+- **Reading real code counts.** Point to stdlib source or well-known Go
+  project patterns when relevant — reading idiomatic Go is part of learning.
+
+---
+
 ## 1. Approach: Sequential by Phase
 
 Follow the spec's phase ordering. Build Phase 1 (CLI core) completely, then
