@@ -1,7 +1,10 @@
 {{define "title"}}{{.Book.Title}}{{end}}
 {{define "content"}}
-<h1>{{.Book.Title}}</h1>
-<p class="author">{{.Book.Author}}</p>
+<div class="book-detail">
+    <img src="/covers/{{.Book.ID}}" alt="{{.Book.Title}}" class="book-cover" onerror="this.src='/static/placeholder.svg'">
+    <div class="book-info">
+        <h1>{{.Book.Title}}</h1>
+        <p class="author">{{.Book.Author}}</p>
 {{if .Book.Series}}
 <p class="series">{{.Book.Series}}{{if .Book.SeriesIndex}} #{{.Book.SeriesIndex}}{{end}}</p>
 {{end}}
@@ -22,10 +25,11 @@
 </ul>
 {{end}}
 <div class="actions">
-    <a href="/files/{{.Book.ID}}.epub" class="btn">Download EPUB</a>
+    <a href="/files/{{.Book.ID}}" class="btn">Download EPUB</a>
     <a href="/book/{{.Book.ID}}/edit" class="btn">Edit</a>
     <form method="post" action="/book/{{.Book.ID}}/delete" class="inline" onsubmit="return confirm('Delete this book?')">
         <button type="submit" class="btn btn-danger">Delete</button>
     </form>
+</div>
 </div>
 {{end}}

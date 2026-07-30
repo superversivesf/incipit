@@ -11,6 +11,25 @@ import (
 	"github.com/jason/incipit/internal/opds"
 )
 
+const opdsPerPage = 50
+
+func opdsPage(r *http.Request) (int, int) {
+	page := atoiDefault(r.URL.Query().Get("page"), 1)
+	return page, (page - 1) * opdsPerPage
+}
+
+func addPaginationLinks(feed *opds.Feed, baseURL string, page, total int) {
+	if page > 1 {
+		feed.AddLink(opds.RelSelf, baseURL+"?page="+strconv.Itoa(page), opds.TypeAcquisition)
+	} else {
+		feed.AddLink(opds.RelSelf, baseURL, opds.TypeAcquisition)
+	}
+	feed.AddLink(opds.RelStart, "/opds", opds.TypeNavigation)
+	if page*opdsPerPage < total {
+		feed.AddLink(opds.RelNext, baseURL+"?page="+strconv.Itoa(page+1), opds.TypeAcquisition)
+	}
+}
+
 func (s *Server) writeOPDS(w http.ResponseWriter, feed *opds.Feed) {
 	w.Header().Set("Content-Type", "application/atom+xml; profile=opds-catalog")
 	data, err := feed.Marshal()
@@ -51,9 +70,10 @@ func (s *Server) opdsRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) opdsNewest(w http.ResponseWriter, r *http.Request) {
-	books, _, _ := s.DB.ListBooks(50, 0)
+	page, offset := opdsPage(r)
+	books, total, _ := s.DB.ListBooks(opdsPerPage, offset)
 	feed := opds.NewFeed("urn:incipit:newest", "Newest Books")
-	feed.AddLink(opds.RelSelf, "/opds/newest", opds.TypeAcquisition)
+	addPaginationLinks(feed, "/opds/newest", page, total)
 	for _, b := range books {
 		feed.AddEntry(bookToEntry(b))
 	}
@@ -61,8 +81,6 @@ func (s *Server) opdsNewest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) opdsByAuthor(w http.ResponseWriter, r *http.Request) {
-	series, _ := s.DB.ListSeries()
-	_ = series
 	authors, err := s.DB.DistinctAuthors()
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -70,6 +88,7 @@ func (s *Server) opdsByAuthor(w http.ResponseWriter, r *http.Request) {
 	}
 	feed := opds.NewFeed("urn:incipit:byauthor", "By Author")
 	feed.AddLink(opds.RelSelf, "/opds/byauthor", opds.TypeNavigation)
+	feed.AddLink(opds.RelStart, "/opds", opds.TypeNavigation)
 	for _, a := range authors {
 		feed.AddEntry(opds.Entry{
 			Title: a,
@@ -81,9 +100,11 @@ func (s *Server) opdsByAuthor(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) opdsByAuthorBooks(w http.ResponseWriter, r *http.Request) {
 	author := chi.URLParam(r, "author")
-	books, _ := s.DB.BooksByAuthor(author, 50, 0)
+	page, offset := opdsPage(r)
+	books := s.getBooksByAuthorPaged(author, offset)
+	total := s.DB.CountBooksByAuthor(author)
 	feed := opds.NewFeed("urn:incipit:byauthor:"+author, "Books by "+author)
-	feed.AddLink(opds.RelSelf, "/opds/byauthor/"+author, opds.TypeAcquisition)
+	addPaginationLinks(feed, "/opds/byauthor/"+author, page, total)
 	for _, b := range books {
 		feed.AddEntry(bookToEntry(b))
 	}
@@ -94,6 +115,7 @@ func (s *Server) opdsBySeries(w http.ResponseWriter, r *http.Request) {
 	seriesList, _ := s.DB.ListSeries()
 	feed := opds.NewFeed("urn:incipit:byseries", "By Series")
 	feed.AddLink(opds.RelSelf, "/opds/byseries", opds.TypeNavigation)
+	feed.AddLink(opds.RelStart, "/opds", opds.TypeNavigation)
 	for _, s := range seriesList {
 		feed.AddEntry(opds.Entry{
 			Title: s.Name + " (" + strconv.Itoa(s.BookCount) + ")",
@@ -105,9 +127,11 @@ func (s *Server) opdsBySeries(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) opdsBySeriesBooks(w http.ResponseWriter, r *http.Request) {
 	series := chi.URLParam(r, "series")
-	books, _ := s.DB.BooksBySeries(series, 50, 0)
+	page, offset := opdsPage(r)
+	books := s.getBooksBySeriesPaged(series, offset)
+	total := s.DB.CountBooksBySeries(series)
 	feed := opds.NewFeed("urn:incipit:byseries:"+series, series)
-	feed.AddLink(opds.RelSelf, "/opds/byseries/"+series, opds.TypeAcquisition)
+	addPaginationLinks(feed, "/opds/byseries/"+series, page, total)
 	for _, b := range books {
 		feed.AddEntry(bookToEntry(b))
 	}
@@ -118,6 +142,7 @@ func (s *Server) opdsByTag(w http.ResponseWriter, r *http.Request) {
 	tags, _ := s.DB.ListTags()
 	feed := opds.NewFeed("urn:incipit:bytag", "By Tag")
 	feed.AddLink(opds.RelSelf, "/opds/bytag", opds.TypeNavigation)
+	feed.AddLink(opds.RelStart, "/opds", opds.TypeNavigation)
 	for _, tag := range tags {
 		feed.AddEntry(opds.Entry{
 			Title: tag.Name,
@@ -134,9 +159,11 @@ func (s *Server) opdsByTagBooks(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	books, _ := s.DB.BooksByTag(tagID, 50, 0)
+	page, offset := opdsPage(r)
+	books := s.getBooksByTagPaged(tagID, offset)
+	total := s.DB.CountBooksByTag(tagID)
 	feed := opds.NewFeed("urn:incipit:bytag:"+idStr, "Books with tag")
-	feed.AddLink(opds.RelSelf, "/opds/bytag/"+idStr, opds.TypeAcquisition)
+	addPaginationLinks(feed, "/opds/bytag/"+idStr, page, total)
 	for _, b := range books {
 		feed.AddEntry(bookToEntry(b))
 	}
@@ -145,9 +172,10 @@ func (s *Server) opdsByTagBooks(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) opdsSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
-	results, _, _ := s.searcher.Search(r.Context(), q, searchOpts(1, 50))
+	page, _ := opdsPage(r)
+	results, total, _ := s.searcher.Search(r.Context(), q, searchOpts(page, opdsPerPage))
 	feed := opds.NewFeed("urn:incipit:search:"+q, "Search: "+q)
-	feed.AddLink(opds.RelSelf, "/opds/search?q="+q, opds.TypeAcquisition)
+	addPaginationLinks(feed, "/opds/search?q="+q, page, total)
 	for _, b := range results {
 		feed.AddEntry(bookToEntry(b))
 	}
@@ -160,14 +188,13 @@ func (s *Server) opdsDownload(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	book, err := s.DB.GetBook(id)
+	_, err = s.DB.GetBook(id)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 	w.Header().Set("Content-Type", "application/epub+zip")
 	http.ServeFile(w, r, s.Storage.BookFilePath(id))
-	_ = book
 }
 
 func bookToEntry(b models.Book) opds.Entry {
@@ -176,7 +203,7 @@ func bookToEntry(b models.Book) opds.Entry {
 		Title:  b.Title,
 		Author: &opds.Author{Name: b.Author},
 		Links: []opds.Link{
-			{Rel: opds.RelImage, Href: "/covers/" + strconv.FormatInt(b.ID, 10) + ".jpg", Type: opds.TypeJPEG},
+			{Rel: opds.RelImage, Href: "/covers/" + strconv.FormatInt(b.ID, 10), Type: opds.TypeJPEG},
 			{Rel: opds.RelAcquisition, Href: "/opds/book/" + strconv.FormatInt(b.ID, 10) + "/download", Type: opds.TypeEPUB},
 		},
 	}
@@ -190,3 +217,18 @@ func bookToEntry(b models.Book) opds.Entry {
 }
 
 var _ = xml.Header
+
+func (s *Server) getBooksByAuthorPaged(author string, offset int) []models.Book {
+	books, _ := s.DB.BooksByAuthor(author, opdsPerPage, offset)
+	return books
+}
+
+func (s *Server) getBooksBySeriesPaged(series string, offset int) []models.Book {
+	books, _ := s.DB.BooksBySeries(series, opdsPerPage, offset)
+	return books
+}
+
+func (s *Server) getBooksByTagPaged(tagID int64, offset int) []models.Book {
+	books, _ := s.DB.BooksByTag(tagID, opdsPerPage, offset)
+	return books
+}

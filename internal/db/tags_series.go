@@ -23,6 +23,24 @@ func (d *DB) DistinctAuthors() ([]string, error) {
 	return authors, rows.Err()
 }
 
+func (d *DB) CountBooksByAuthor(author string) int {
+	var c int
+	d.db.QueryRow("SELECT COUNT(*) FROM books WHERE author = ?", author).Scan(&c)
+	return c
+}
+
+func (d *DB) CountBooksBySeries(series string) int {
+	var c int
+	d.db.QueryRow("SELECT COUNT(*) FROM books WHERE series = ?", series).Scan(&c)
+	return c
+}
+
+func (d *DB) CountBooksByTag(tagID int64) int {
+	var c int
+	d.db.QueryRow("SELECT COUNT(*) FROM book_tags WHERE tag_id = ?", tagID).Scan(&c)
+	return c
+}
+
 func (d *DB) CountedBooksBy(column, value string, limit, offset int) ([]models.Book, int) {
 	var total int
 	d.db.QueryRow("SELECT COUNT(*) FROM books WHERE "+column+" = ?", value).Scan(&total)

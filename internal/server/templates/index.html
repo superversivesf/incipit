@@ -9,7 +9,7 @@
 {{range .Books}}
 <div class="book-card">
     <a href="/book/{{.ID}}">
-        {{if .CoverPath}}<img src="/covers/{{.ID}}.jpg" alt="{{.Title}}">{{else}}<div class="no-cover">No cover</div>{{end}}
+        <img src="/covers/{{.ID}}" alt="{{.Title}}" onerror="this.src='/static/placeholder.svg'">
         <span class="title">{{.Title}}</span>
         <span class="author">{{.Author}}</span>
     </a>

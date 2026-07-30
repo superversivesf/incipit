@@ -205,5 +205,5 @@ func (s *Server) handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func coverURL(bookID int64) string {
-	return "/covers/" + strconv.FormatInt(bookID, 10) + ".jpg"
+	return "/covers/" + strconv.FormatInt(bookID, 10)
 }

@@ -2,12 +2,14 @@ package server
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -132,9 +134,54 @@ func (s *Server) serveCover(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+
+	coverPath := s.Storage.CoverPath(id)
+	if _, err := os.Stat(coverPath); err != nil {
+		book, dbErr := s.DB.GetBook(id)
+		if dbErr != nil {
+			http.NotFound(w, r)
+			return
+		}
+		servePlaceholderCover(w, book.Title, book.Author)
+		return
+	}
+
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "max-age=31536000")
-	http.ServeFile(w, r, s.Storage.CoverPath(id))
+	http.ServeFile(w, r, coverPath)
+}
+
+func servePlaceholderCover(w http.ResponseWriter, title, author string) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Set("Cache-Control", "max-age=3600")
+
+	displayTitle := title
+	if len(displayTitle) > 30 {
+		displayTitle = displayTitle[:27] + "..."
+	}
+	displayAuthor := author
+	if len(displayAuthor) > 25 {
+		displayAuthor = displayAuthor[:22] + "..."
+	}
+
+	svg := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
+  <rect width="200" height="300" fill="#2c3e50"/>
+  <rect x="10" y="10" width="180" height="280" fill="#34495e" rx="4"/>
+  <text x="100" y="130" font-family="serif" font-size="16" fill="#ecf0f1" text-anchor="middle" font-weight="bold">%s</text>
+  <text x="100" y="165" font-family="serif" font-size="12" fill="#bdc3c7" text-anchor="middle" font-style="italic">%s</text>
+  <text x="100" y="280" font-family="sans-serif" font-size="10" fill="#7f8c8d" text-anchor="middle">Incipit</text>
+</svg>`, escapeXML(displayTitle), escapeXML(displayAuthor))
+
+	w.Write([]byte(svg))
+}
+
+func escapeXML(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	s = strings.ReplaceAll(s, "\"", "&quot;")
+	return s
 }
 
 func (s *Server) serveFile(w http.ResponseWriter, r *http.Request) {

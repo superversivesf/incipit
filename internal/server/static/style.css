@@ -132,3 +132,11 @@ code { background: #f4f4f4; padding: 0.1rem 0.3rem; border-radius: 3px; }
 .description { margin: 1rem 0; line-height: 1.5; }
 .tag-list { display: flex; gap: 0.5rem; flex-wrap: wrap; list-style: none; padding: 0; }
 .tag-list li { background: #eef; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.85em; }
+
+.book-detail { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+.book-cover { width: 200px; height: 300px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.book-info { flex: 1; }
+.book-info h1 { margin-top: 0; }
+
+.pagination { display: flex; gap: 0.5rem; align-items: center; margin: 1.5rem 0; }
+.page-info { color: #777; }
