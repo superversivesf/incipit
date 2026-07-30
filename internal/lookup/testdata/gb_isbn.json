@@ -1,0 +1,15 @@
+{
+  "items": [{
+    "volumeInfo": {
+      "title": "Leviathan Wakes",
+      "authors": ["James S. A. Corey"],
+      "publishedDate": "2011-06-15",
+      "description": "Two hundred years after migrating into space...",
+      "categories": ["Fiction", "Science Fiction"],
+      "averageRating": 4.5,
+      "imageLinks": {
+        "thumbnail": "http://books.google.com/books/content?id=abc123"
+      }
+    }
+  }]
+}

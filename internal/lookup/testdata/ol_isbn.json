@@ -1,0 +1,17 @@
+{
+  "ISBN:9780316129084": {
+    "title": "Leviathan Wakes",
+    "authors": [{"name": "James S. A. Corey"}],
+    "publishers": [{"name": "Orbit Books"}],
+    "publish_date": "2011",
+    "number_of_pages": 577,
+    "subjects": [
+      {"name": "Space warfare"},
+      {"name": "Fiction"},
+      {"name": "series:The Expanse"}
+    ],
+    "cover": {
+      "large": "https://covers.openlibrary.org/b/id/11295081-L.jpg"
+    }
+  }
+}
