@@ -1,0 +1,12 @@
+{{define "title"}}Upload{{end}}
+{{define "content"}}
+<h1>Upload EPUB</h1>
+<form method="post" action="/upload" enctype="multipart/form-data" class="upload-form">
+    <label>
+        <span>EPUB file:</span>
+        <input type="file" name="epub" accept=".epub" required>
+    </label>
+    <button type="submit" class="btn">Upload</button>
+</form>
+<p class="hint">Or use the CLI: <code>incipit add &lt;path.epub&gt;</code></p>
+{{end}}

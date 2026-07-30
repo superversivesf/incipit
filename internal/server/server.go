@@ -93,6 +93,12 @@ func (s *Server) router() http.Handler {
 		r.Post("/upload", s.handleUpload)
 		r.Get("/", s.indexPage)
 		r.Get("/book/{id}", s.bookPage)
+		r.Get("/book/{id}/edit", s.editBookPage)
+		r.Post("/book/{id}/edit", s.editBookSave)
+		r.Post("/book/{id}/delete", s.deleteBookPage)
+		r.Get("/tags", s.tagsPage)
+		r.Get("/series", s.seriesPage)
+		r.Get("/upload", s.uploadPage)
 	})
 
 	return r

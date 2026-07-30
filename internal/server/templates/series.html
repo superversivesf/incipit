@@ -1,0 +1,32 @@
+{{define "title"}}Series{{end}}
+{{define "content"}}
+<h1>Series</h1>
+
+<div class="series-list">
+{{range .Series}}
+<div class="series-item">
+    <span class="series-name">{{.Name}}</span>
+    <span class="series-count">{{.BookCount}} book{{if ne .BookCount 1}}s{{end}}</span>
+    <a href="/opds/byseries/{{.Name}}" class="btn btn-small">Browse</a>
+    <button onclick="renameSeries('{{.Name}}')" class="btn btn-small">Rename</button>
+</div>
+{{end}}
+</div>
+
+{{if eq (len .Series) 0}}
+<p class="empty">No series yet. Set series names on books via the <a href="/">library</a>.</p>
+{{end}}
+
+<script>
+function renameSeries(oldName) {
+    var newName = prompt('Rename series to:', oldName);
+    if (newName && newName !== oldName) {
+        fetch('/api/series/rename', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({old_name: oldName, new_name: newName})
+        }).then(() => location.reload());
+    }
+}
+</script>
+{{end}}

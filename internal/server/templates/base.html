@@ -7,10 +7,13 @@
 </head>
 <body>
 <nav>
-    <a href="/">Incipit</a>
-    <form action="/" method="get" style="display:inline">
-        <input type="text" name="q" placeholder="search">
+    <a href="/" class="brand">Incipit</a>
+    <form action="/" method="get" class="search-form">
+        <input type="text" name="q" placeholder="search books">
     </form>
+    <a href="/tags">Tags</a>
+    <a href="/series">Series</a>
+    <a href="/upload" class="btn">Upload</a>
 </nav>
 <main>
 {{block "content" .}}{{end}}

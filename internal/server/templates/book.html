@@ -1,13 +1,12 @@
-{{template "base" .}}
 {{define "title"}}{{.Book.Title}}{{end}}
 {{define "content"}}
 <h1>{{.Book.Title}}</h1>
 <p class="author">{{.Book.Author}}</p>
 {{if .Book.Series}}
-<p class="series">{{.Book.Series}} #{{.Book.SeriesIndex}}</p>
+<p class="series">{{.Book.Series}}{{if .Book.SeriesIndex}} #{{.Book.SeriesIndex}}{{end}}</p>
 {{end}}
 {{if .Book.Description}}
-<p>{{.Book.Description}}</p>
+<p class="description">{{.Book.Description}}</p>
 {{end}}
 <dl>
     {{if .Book.ISBN}}<dt>ISBN</dt><dd>{{.Book.ISBN}}</dd>{{end}}
@@ -18,9 +17,15 @@
 </dl>
 {{if .Tags}}
 <h3>Tags</h3>
-<ul>
+<ul class="tag-list">
 {{range .Tags}}<li>{{.Name}}</li>{{end}}
 </ul>
 {{end}}
-<a href="/files/{{.Book.ID}}.epub">Download EPUB</a>
+<div class="actions">
+    <a href="/files/{{.Book.ID}}.epub" class="btn">Download EPUB</a>
+    <a href="/book/{{.Book.ID}}/edit" class="btn">Edit</a>
+    <form method="post" action="/book/{{.Book.ID}}/delete" class="inline" onsubmit="return confirm('Delete this book?')">
+        <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+</div>
 {{end}}

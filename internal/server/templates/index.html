@@ -1,4 +1,3 @@
-{{template "base" .}}
 {{define "title"}}Incipit Library{{end}}
 {{define "content"}}
 <h1>Library ({{.Total}} books)</h1>
@@ -6,11 +5,14 @@
 {{range .Books}}
 <div class="book-card">
     <a href="/book/{{.ID}}">
-        {{if .CoverPath}}<img src="/covers/{{.ID}}.jpg" alt="{{.Title}}">{{end}}
+        {{if .CoverPath}}<img src="/covers/{{.ID}}.jpg" alt="{{.Title}}">{{else}}<div class="no-cover">No cover</div>{{end}}
         <span class="title">{{.Title}}</span>
         <span class="author">{{.Author}}</span>
     </a>
 </div>
 {{end}}
 </div>
+{{if eq .Total 0}}
+<p class="empty">No books yet. <a href="/upload">Upload one</a> or use <code>incipit add &lt;path.epub&gt;</code>.</p>
+{{end}}
 {{end}}

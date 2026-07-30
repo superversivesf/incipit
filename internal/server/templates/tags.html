@@ -1,0 +1,55 @@
+{{define "title"}}Tags{{end}}
+{{define "content"}}
+<h1>Tags</h1>
+
+<div class="tag-tree">
+{{range .Tags}}
+<div class="tag-item" style="margin-left: {{if .ParentID}}20px{{else}}0{{end}}">
+    <span class="tag-name">{{.Name}}</span>
+    <button onclick="editTag({{.ID}}, '{{.Name}}')" class="btn btn-small">Edit</button>
+    <button onclick="deleteTag({{.ID}})" class="btn btn-small btn-danger">Delete</button>
+</div>
+{{end}}
+</div>
+
+{{if eq (len .Tags) 0}}
+<p class="empty">No tags yet.</p>
+{{end}}
+
+<h2>Create Tag</h2>
+<form id="tag-form" class="edit-form">
+    <label><span>Name</span><input type="text" id="tag-name" placeholder="Tag name"></label>
+    <button type="submit" class="btn">Create</button>
+</form>
+
+<script>
+document.getElementById('tag-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var name = document.getElementById('tag-name').value;
+    if (!name) return;
+    fetch('/api/tags', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name})
+    }).then(() => location.reload());
+});
+
+function editTag(id, name) {
+    var newName = prompt('Rename tag:', name);
+    if (newName && newName !== name) {
+        fetch('/api/tags/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName})
+        }).then(() => location.reload());
+    }
+}
+
+function deleteTag(id) {
+    if (confirm('Delete this tag?')) {
+        fetch('/api/tags/' + id, {method: 'DELETE'})
+            .then(() => location.reload());
+    }
+}
+</script>
+{{end}}
