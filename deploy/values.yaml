@@ -1,0 +1,40 @@
+# Helm values for Incipit on the veridian-apps chart
+image:
+  repository: ghcr.io/superversivesf/incipit
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  port: 8080
+
+ingress:
+  enabled: true
+  host: incipit.veridiandynamics
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: veridiandynamics-default-headers@kubernetescrd
+
+persistence:
+  enabled: true
+  size: 10Gi
+  mountPath: /data
+
+env:
+  INCIPIT_DB_PATH: /data/books.db
+  INCIPIT_STORAGE_DIR: /data
+  INCIPIT_PORT: "8080"
+
+probes:
+  readiness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  liveness:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 20

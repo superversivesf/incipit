@@ -59,9 +59,18 @@ func (s *Server) router() http.Handler {
 	r.Use(requestLogger)
 
 	r.Get("/health", s.health)
+	r.Get("/syncs/healthcheck", s.syncHealthcheck)
 
 	r.Group(func(r chi.Router) {
 		r.Use(s.basicAuth)
+		r.Get("/syncs/auth", s.syncAuth)
+		r.Get("/syncs/progress/{hash}", s.getProgress)
+		r.Put("/syncs/progress/{hash}", s.putProgress)
+		r.Post("/api/tags", s.apiCreateTag)
+		r.Put("/api/tags/{id}", s.apiUpdateTag)
+		r.Delete("/api/tags/{id}", s.apiDeleteTag)
+		r.Post("/api/series/rename", s.apiRenameSeries)
+		r.Post("/api/books/{id}/cover", s.uploadCover)
 		r.Get("/api/books", s.handleListBooks)
 		r.Get("/api/books/{id}", s.handleGetBook)
 		r.Put("/api/books/{id}", s.handleUpdateBook)
