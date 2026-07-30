@@ -9,6 +9,7 @@ import (
 
 	"github.com/jason/incipit/internal/config"
 	"github.com/jason/incipit/internal/db"
+	"github.com/jason/incipit/internal/epub"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -31,7 +32,7 @@ func main() {
 	case "serve":
 		fmt.Println("serve: not yet implemented")
 	case "parse":
-		fmt.Println("parse: not yet implemented")
+		runParse(os.Args[2:])
 	case "lookup":
 		fmt.Println("lookup: not yet implemented")
 	case "add":
@@ -155,4 +156,24 @@ func hashPassword(plaintext string) (string, error) {
 	}
 
 	return string(bcryptHash), nil
+}
+
+func runParse(args []string) {
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "usage: incipit parse <path>")
+		os.Exit(2)
+	}
+
+	meta, err := epub.Parse(args[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error parsing epub: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Title:      %s\n", meta.Title)
+	fmt.Printf("Creator:    %s\n", meta.Creator)
+	fmt.Printf("Identifier: %s\n", meta.Identifier)
+	fmt.Printf("Language:   %s\n", meta.Language)
+	fmt.Printf("Publisher:  %s\n", meta.Publisher)
+	fmt.Printf("Date:       %s\n", meta.Date)
 }
