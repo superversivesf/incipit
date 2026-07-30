@@ -5,6 +5,29 @@
 ({{.Total}} book{{if ne .Total 1}}s{{end}})
 </h1>
 
+{{if and (not .SearchQuery) .CurrentlyReading}}
+<div class="currently-reading">
+    <h2>Currently Reading</h2>
+    <div class="progress-grid">
+    {{range .CurrentlyReading}}
+    <div class="progress-card">
+        <a href="/book/{{.BookID}}">
+            <img src="/covers/{{.BookID}}" alt="{{.Title}}" class="progress-cover">
+            <div class="progress-info">
+                <span class="title">{{.Title}}</span>
+                <span class="author">{{.Author}}</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:{{printf "%.0f" (mulF .Percentage 100.0)}}%"></div>
+                </div>
+                <span class="progress-text">{{printf "%.0f" (mulF .Percentage 100.0)}}% on {{.Device}}</span>
+            </div>
+        </a>
+    </div>
+    {{end}}
+    </div>
+</div>
+{{end}}
+
 <div class="book-grid">
 {{range .Books}}
 <div class="book-card">

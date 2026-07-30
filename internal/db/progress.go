@@ -49,3 +49,40 @@ func (d *DB) UpsertProgress(p *models.ReadingProgress) error {
 	}
 	return nil
 }
+
+type BookProgress struct {
+	BookID     int64
+	Title      string
+	Author     string
+	CoverPath  string
+	Percentage float64
+	Device     string
+	Updated    string
+}
+
+func (d *DB) ListReadingProgress(userID int64) ([]BookProgress, error) {
+	rows, err := d.db.Query(
+		`SELECT b.id, b.title, b.author, b.cover_path,
+		   rp.percentage, rp.device, rp.updated
+		 FROM reading_progress rp
+		 JOIN books b ON b.id = rp.book_id
+		 WHERE rp.user_id = ? AND rp.book_id IS NOT NULL
+		 ORDER BY rp.updated DESC`,
+		userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listing reading progress: %w", err)
+	}
+	defer rows.Close()
+
+	var results []BookProgress
+	for rows.Next() {
+		var bp BookProgress
+		if err := rows.Scan(&bp.BookID, &bp.Title, &bp.Author, &bp.CoverPath,
+			&bp.Percentage, &bp.Device, &bp.Updated); err != nil {
+			return nil, fmt.Errorf("scanning progress row: %w", err)
+		}
+		results = append(results, bp)
+	}
+	return results, rows.Err()
+}

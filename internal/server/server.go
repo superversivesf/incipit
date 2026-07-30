@@ -62,6 +62,7 @@ func (s *Server) router() http.Handler {
 
 	r.Get("/health", s.health)
 	r.Get("/syncs/healthcheck", s.syncHealthcheck)
+	r.Get("/opds/opensearch.xml", s.opensearchDescription)
 	r.Handle("/static/*", staticFileServer())
 
 	r.Group(func(r chi.Router) {

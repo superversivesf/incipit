@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/jason/incipit/internal/db"
 	"github.com/jason/incipit/internal/epub"
 	"github.com/jason/incipit/internal/lookup"
 	"github.com/jason/incipit/internal/models"
@@ -53,9 +54,10 @@ func staticFileServer() http.Handler {
 }
 
 var templateFuncs = template.FuncMap{
-	"add": func(a, b int) int { return a + b },
-	"sub": func(a, b int) int { return a - b },
-	"mul": func(a, b int) int { return a * b },
+	"add":  func(a, b int) int { return a + b },
+	"sub":  func(a, b int) int { return a - b },
+	"mul":  func(a, b int) int { return a * b },
+	"mulF": func(a, b float64) float64 { return a * b },
 }
 
 func (s *Server) renderTemplate(w http.ResponseWriter, r *http.Request, name string, data interface{}) {
@@ -101,12 +103,19 @@ func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Get reading progress for the current user
+	var currentlyReading []db.BookProgress
+	if user := UserFromContext(r.Context()); user != nil {
+		currentlyReading, _ = s.DB.ListReadingProgress(user.ID)
+	}
+
 	data := map[string]interface{}{
-		"Books":   books,
-		"Total":   total,
-		"Page":    page,
-		"PerPage": perPage,
-		"Query":   q,
+		"Books":            books,
+		"Total":            total,
+		"Page":             page,
+		"PerPage":          perPage,
+		"Query":            q,
+		"CurrentlyReading": currentlyReading,
 	}
 
 	if q != "" {

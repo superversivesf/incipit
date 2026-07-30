@@ -140,3 +140,53 @@ code { background: #f4f4f4; padding: 0.1rem 0.3rem; border-radius: 3px; }
 
 .pagination { display: flex; gap: 0.5rem; align-items: center; margin: 1.5rem 0; }
 .page-info { color: #777; }
+
+.currently-reading { margin-bottom: 2rem; }
+.currently-reading h2 { font-size: 1.1rem; color: #555; }
+.progress-grid {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+.progress-card { flex-shrink: 0; width: 120px; }
+.progress-card a { text-decoration: none; color: inherit; }
+.progress-cover {
+    width: 120px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.progress-info { margin-top: 0.3rem; }
+.progress-info .title {
+    display: block;
+    font-weight: bold;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.progress-info .author {
+    display: block;
+    font-size: 0.75rem;
+    color: #777;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.progress-bar {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    margin: 0.3rem 0;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    background: #3498db;
+    border-radius: 3px;
+}
+.progress-text {
+    font-size: 0.7rem;
+    color: #999;
+}

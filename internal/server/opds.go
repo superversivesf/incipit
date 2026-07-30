@@ -44,6 +44,7 @@ func (s *Server) opdsRoot(w http.ResponseWriter, r *http.Request) {
 	feed := opds.NewFeed("urn:incipit:root", "Incipit Library")
 	feed.AddLink(opds.RelSelf, "/opds", opds.TypeNavigation)
 	feed.AddLink(opds.RelStart, "/opds", opds.TypeNavigation)
+	feed.AddLink("search", "/opds/opensearch.xml", "application/opensearchdescription+xml")
 
 	feed.AddEntry(opds.Entry{
 		Title: "Newest Books",
@@ -217,6 +218,16 @@ func bookToEntry(b models.Book) opds.Entry {
 }
 
 var _ = xml.Header
+
+func (s *Server) opensearchDescription(w http.ResponseWriter, r *http.Request) {
+	data, err := templateFS.ReadFile("templates/opensearch.xml")
+	if err != nil {
+		http.Error(w, "opensearch not found", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/opensearchdescription+xml")
+	w.Write(data)
+}
 
 func (s *Server) getBooksByAuthorPaged(author string, offset int) []models.Book {
 	books, _ := s.DB.BooksByAuthor(author, opdsPerPage, offset)
