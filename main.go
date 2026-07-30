@@ -267,7 +267,7 @@ func runAdd(args []string) {
 	fs.Parse(args)
 
 	if fs.NArg() < 1 {
-		fmt.Fprintln(os.Stderr, "usage: incipit add <path> [--no-lookup] [--dry-run]")
+		fmt.Fprintln(os.Stderr, "usage: incipit add [--no-lookup] [--dry-run] <path>")
 		os.Exit(2)
 	}
 	path := fs.Arg(0)

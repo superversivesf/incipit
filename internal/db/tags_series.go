@@ -117,8 +117,8 @@ func (d *DB) RemoveTagFromBook(bookID, tagID int64) error {
 }
 
 type SeriesInfo struct {
-	Name      string
-	BookCount int
+	Name      string `json:"name"`
+	BookCount int    `json:"book_count"`
 }
 
 func (d *DB) ListSeries() ([]SeriesInfo, error) {

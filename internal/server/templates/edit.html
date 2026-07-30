@@ -39,7 +39,7 @@
 </form>
 
 <h2>Cover</h2>
-<form method="post" action="/api/books/{{.Book.ID}}/cover" enctype="multipart/form-data" class="upload-form">
+<form method="post" action="/book/{{.Book.ID}}/cover" enctype="multipart/form-data" class="upload-form">
     <label>
         <span>New cover (JPEG):</span>
         <input type="file" name="cover" accept="image/jpeg" required>

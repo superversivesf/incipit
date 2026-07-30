@@ -72,6 +72,7 @@ func (s *Server) router() http.Handler {
 		r.Delete("/api/tags/{id}", s.apiDeleteTag)
 		r.Post("/api/series/rename", s.apiRenameSeries)
 		r.Post("/api/books/{id}/cover", s.uploadCover)
+		r.Post("/book/{id}/cover", s.uploadCoverRedirect)
 		r.Get("/api/books", s.handleListBooks)
 		r.Get("/api/books/{id}", s.handleGetBook)
 		r.Put("/api/books/{id}", s.handleUpdateBook)
