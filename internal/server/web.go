@@ -4,11 +4,17 @@ import (
 	"embed"
 	"html/template"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/jason/incipit/internal/epub"
+	"github.com/jason/incipit/internal/lookup"
+	"github.com/jason/incipit/internal/models"
+	"github.com/jason/incipit/internal/storage"
 )
 
 //go:embed templates
@@ -17,7 +23,7 @@ var templateFS embed.FS
 //go:embed static
 var staticFS embed.FS
 
-var templatePages map[string]*template.Template
+var templates map[string]*template.Template
 
 func init() {
 	pages := map[string]string{
@@ -29,18 +35,29 @@ func init() {
 		"series.html": "templates/series.html",
 	}
 
-	templatePages = make(map[string]*template.Template)
+	templates = make(map[string]*template.Template)
 	for name, path := range pages {
-		t, err := template.New(name).ParseFS(templateFS, "templates/base.html", path)
+		t, err := template.New(name).Funcs(templateFuncs).ParseFS(templateFS, "templates/base.html", path)
 		if err != nil {
 			panic(err)
 		}
-		templatePages[name] = t
+		templates[name] = t
 	}
 }
 
+func staticFileServer() http.Handler {
+	sub, _ := fs.Sub(staticFS, "static")
+	return http.StripPrefix("/static/", http.FileServer(http.FS(sub)))
+}
+
+var templateFuncs = template.FuncMap{
+	"add": func(a, b int) int { return a + b },
+	"sub": func(a, b int) int { return a - b },
+	"mul": func(a, b int) int { return a * b },
+}
+
 func (s *Server) renderTemplate(w http.ResponseWriter, name string, data interface{}) {
-	t, ok := templatePages[name]
+	t, ok := templates[name]
 	if !ok {
 		http.Error(w, "template not found: "+name, http.StatusInternalServerError)
 		return
@@ -51,11 +68,44 @@ func (s *Server) renderTemplate(w http.ResponseWriter, name string, data interfa
 }
 
 func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) {
-	books, total, _ := s.DB.ListBooks(100, 0)
-	s.renderTemplate(w, "index.html", map[string]interface{}{
-		"Books": books,
-		"Total": total,
-	})
+	page := atoiDefault(r.URL.Query().Get("page"), 1)
+	perPage := 20
+	q := r.URL.Query().Get("q")
+
+	var books []models.Book
+	var total int
+
+	if q != "" {
+		results, count, err := s.searcher.Search(r.Context(), q, searchOpts(page, perPage))
+		if err != nil {
+			books = nil
+			total = 0
+		} else {
+			books = results
+			total = count
+		}
+	} else {
+		var err error
+		books, total, err = s.DB.ListBooks(perPage, (page-1)*perPage)
+		if err != nil {
+			books = nil
+			total = 0
+		}
+	}
+
+	data := map[string]interface{}{
+		"Books":   books,
+		"Total":   total,
+		"Page":    page,
+		"PerPage": perPage,
+		"Query":   q,
+	}
+
+	if q != "" {
+		data["SearchQuery"] = q
+	}
+
+	s.renderTemplate(w, "index.html", data)
 }
 
 func (s *Server) bookPage(w http.ResponseWriter, r *http.Request) {
@@ -113,10 +163,78 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cannot save upload", http.StatusInternalServerError)
 		return
 	}
-	defer out.Close()
-	io.Copy(out, file)
+	if _, err := io.Copy(out, file); err != nil {
+		out.Close()
+		http.Error(w, "error saving file", http.StatusInternalServerError)
+		return
+	}
+	out.Close()
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	defer os.Remove(tmpPath)
+
+	meta, err := epub.Parse(tmpPath)
+	if err != nil {
+		http.Error(w, "error parsing epub: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var lookupResult *models.LookupResult
+	ctx := r.Context()
+	ol := lookup.NewOLClient("https://openlibrary.org")
+	gb := lookup.NewGBClient("https://www.googleapis.com")
+
+	if meta.Identifier != "" {
+		olResult, _ := ol.LookupByISBN(ctx, meta.Identifier)
+		gbResult, _ := gb.LookupByISBN(ctx, meta.Identifier)
+		lookupResult = lookup.Merge(olResult, gbResult)
+	} else if meta.Title != "" {
+		olResult, _ := ol.LookupByTitle(ctx, meta.Title, meta.Creator)
+		gbResult, _ := gb.LookupByTitle(ctx, meta.Title, meta.Creator)
+		lookupResult = lookup.Merge(olResult, gbResult)
+	}
+
+	book := models.MergeMetadata(meta, lookupResult)
+
+	store := storage.New(s.Config.StorageDir)
+	hash, err := store.HashFile(tmpPath)
+	if err != nil {
+		http.Error(w, "error hashing file", http.StatusInternalServerError)
+		return
+	}
+	book.FileHash = hash
+
+	info, err := os.Stat(tmpPath)
+	if err == nil {
+		book.FileSize = info.Size()
+	}
+
+	bookID, err := s.DB.InsertBook(&book)
+	if err != nil {
+		http.Error(w, "error saving to database", http.StatusInternalServerError)
+		return
+	}
+	book.ID = bookID
+	book.FilePath = "files/" + strconv.FormatInt(bookID, 10) + ".epub"
+	s.DB.UpdateBook(&book)
+
+	store.SaveBookFile(bookID, tmpPath)
+
+	if lookupResult != nil && lookupResult.CoverURL != "" {
+		resp, err := http.Get(lookupResult.CoverURL)
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == 200 {
+				coverData, _ := io.ReadAll(resp.Body)
+				if len(coverData) > 0 {
+					store.SaveCover(bookID, coverData)
+					book.CoverPath = "covers/" + strconv.FormatInt(bookID, 10) + ".jpg"
+					s.DB.UpdateBook(&book)
+				}
+			}
+		}
+	}
+
+	http.Redirect(w, r, "/book/"+strconv.FormatInt(bookID, 10), http.StatusSeeOther)
 }
 
 func (s *Server) uploadPage(w http.ResponseWriter, r *http.Request) {

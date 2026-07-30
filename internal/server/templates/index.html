@@ -1,6 +1,10 @@
 {{define "title"}}Incipit Library{{end}}
 {{define "content"}}
-<h1>Library ({{.Total}} books)</h1>
+<h1>
+{{if .SearchQuery}}Search: "{{.SearchQuery}}"{{else}}Library{{end}}
+({{.Total}} book{{if ne .Total 1}}s{{end}})
+</h1>
+
 <div class="book-grid">
 {{range .Books}}
 <div class="book-card">
@@ -12,7 +16,24 @@
 </div>
 {{end}}
 </div>
+
 {{if eq .Total 0}}
+{{if .SearchQuery}}
+<p class="empty">No books found for "{{.SearchQuery}}".</p>
+{{else}}
 <p class="empty">No books yet. <a href="/upload">Upload one</a> or use <code>incipit add &lt;path.epub&gt;</code>.</p>
+{{end}}
+{{end}}
+
+{{if gt .Total .PerPage}}
+<div class="pagination">
+{{if gt .Page 1}}
+<a href="/?page={{sub .Page 1}}{{if .SearchQuery}}&q={{.SearchQuery}}{{end}}" class="btn">&laquo; Prev</a>
+{{end}}
+<span class="page-info">Page {{.Page}}</span>
+{{if lt (mul .Page .PerPage) .Total}}
+<a href="/?page={{add .Page 1}}{{if .SearchQuery}}&q={{.SearchQuery}}{{end}}" class="btn">Next &raquo;</a>
+{{end}}
+</div>
 {{end}}
 {{end}}

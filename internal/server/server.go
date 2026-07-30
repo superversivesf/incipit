@@ -60,6 +60,7 @@ func (s *Server) router() http.Handler {
 
 	r.Get("/health", s.health)
 	r.Get("/syncs/healthcheck", s.syncHealthcheck)
+	r.Handle("/static/*", staticFileServer())
 
 	r.Group(func(r chi.Router) {
 		r.Use(s.basicAuth)
