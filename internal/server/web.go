@@ -58,12 +58,18 @@ var templateFuncs = template.FuncMap{
 	"mul": func(a, b int) int { return a * b },
 }
 
-func (s *Server) renderTemplate(w http.ResponseWriter, name string, data interface{}) {
+func (s *Server) renderTemplate(w http.ResponseWriter, r *http.Request, name string, data interface{}) {
 	t, ok := templates[name]
 	if !ok {
 		http.Error(w, "template not found: "+name, http.StatusInternalServerError)
 		return
 	}
+
+	// Inject CSRF token into data if it's a map
+	if m, ok := data.(map[string]interface{}); ok {
+		m["CSRFToken"] = csrfTokenFromRequest(r)
+	}
+
 	if err := t.ExecuteTemplate(w, "base", data); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
@@ -107,7 +113,7 @@ func (s *Server) indexPage(w http.ResponseWriter, r *http.Request) {
 		data["SearchQuery"] = q
 	}
 
-	s.renderTemplate(w, "index.html", data)
+	s.renderTemplate(w, r, "index.html", data)
 }
 
 func (s *Server) bookPage(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +128,7 @@ func (s *Server) bookPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tags, _ := s.DB.GetTagsForBook(id)
-	s.renderTemplate(w, "book.html", map[string]interface{}{
+	s.renderTemplate(w, r, "book.html", map[string]interface{}{
 		"Book": book,
 		"Tags": tags,
 	})
@@ -285,7 +291,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) uploadPage(w http.ResponseWriter, r *http.Request) {
-	s.renderTemplate(w, "upload.html", nil)
+	s.renderTemplate(w, r, "upload.html", map[string]interface{}{})
 }
 
 func (s *Server) editBookPage(w http.ResponseWriter, r *http.Request) {
@@ -307,7 +313,7 @@ func (s *Server) editBookPage(w http.ResponseWriter, r *http.Request) {
 		bookTagIDs[t.ID] = true
 	}
 
-	s.renderTemplate(w, "edit.html", map[string]interface{}{
+	s.renderTemplate(w, r, "edit.html", map[string]interface{}{
 		"Book":       book,
 		"AllTags":    allTags,
 		"BookTagIDs": bookTagIDs,
@@ -375,10 +381,10 @@ func (s *Server) deleteBookPage(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) tagsPage(w http.ResponseWriter, r *http.Request) {
 	tags, _ := s.DB.ListTags()
-	s.renderTemplate(w, "tags.html", map[string]interface{}{"Tags": tags})
+	s.renderTemplate(w, r, "tags.html", map[string]interface{}{"Tags": tags})
 }
 
 func (s *Server) seriesPage(w http.ResponseWriter, r *http.Request) {
 	series, _ := s.DB.ListSeries()
-	s.renderTemplate(w, "series.html", map[string]interface{}{"Series": series})
+	s.renderTemplate(w, r, "series.html", map[string]interface{}{"Series": series})
 }

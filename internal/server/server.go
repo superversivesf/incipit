@@ -57,13 +57,19 @@ func (s *Server) router() http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(requestLogger)
+	r.Use(securityHeaders)
+	r.Use(maxBodySize(10 << 20)) // 10MB default body limit
 
 	r.Get("/health", s.health)
 	r.Get("/syncs/healthcheck", s.syncHealthcheck)
 	r.Handle("/static/*", staticFileServer())
 
 	r.Group(func(r chi.Router) {
+		r.Use(rateLimit)
 		r.Use(s.basicAuth)
+		r.Use(s.csrfProtect)
+
+		// API routes — JSON, no CSRF needed (basic auth protects them)
 		r.Get("/syncs/auth", s.syncAuth)
 		r.Get("/syncs/progress/{hash}", s.getProgress)
 		r.Put("/syncs/progress/{hash}", s.putProgress)
@@ -72,7 +78,6 @@ func (s *Server) router() http.Handler {
 		r.Delete("/api/tags/{id}", s.apiDeleteTag)
 		r.Post("/api/series/rename", s.apiRenameSeries)
 		r.Post("/api/books/{id}/cover", s.uploadCover)
-		r.Post("/book/{id}/cover", s.uploadCoverRedirect)
 		r.Get("/api/books", s.handleListBooks)
 		r.Get("/api/books/{id}", s.handleGetBook)
 		r.Put("/api/books/{id}", s.handleUpdateBook)
@@ -80,6 +85,8 @@ func (s *Server) router() http.Handler {
 		r.Get("/api/tags", s.handleListTags)
 		r.Get("/api/series", s.handleListSeries)
 		r.Get("/api/lookup", s.handleLookup)
+
+		// OPDS routes — read-only catalog
 		r.Get("/opds", s.opdsRoot)
 		r.Get("/opds/newest", s.opdsNewest)
 		r.Get("/opds/byauthor", s.opdsByAuthor)
@@ -90,14 +97,21 @@ func (s *Server) router() http.Handler {
 		r.Get("/opds/bytag/{tag}", s.opdsByTagBooks)
 		r.Get("/opds/search", s.opdsSearch)
 		r.Get("/opds/book/{id}/download", s.opdsDownload)
+
+		// File/cover serving — read-only
 		r.Get("/covers/{id}", s.serveCover)
 		r.Get("/files/{id}", s.serveFile)
-		r.Post("/upload", s.handleUpload)
+
+		// Web form routes — CSRF protected, larger body limit for uploads
+		r.With(maxBodySize(50<<20)).Post("/upload", s.handleUpload)
+		r.With(maxBodySize(50<<20)).Post("/book/{id}/cover", s.uploadCoverRedirect)
+		r.Post("/book/{id}/edit", s.editBookSave)
+		r.Post("/book/{id}/delete", s.deleteBookPage)
+
+		// Web UI pages — read-only
 		r.Get("/", s.indexPage)
 		r.Get("/book/{id}", s.bookPage)
 		r.Get("/book/{id}/edit", s.editBookPage)
-		r.Post("/book/{id}/edit", s.editBookSave)
-		r.Post("/book/{id}/delete", s.deleteBookPage)
 		r.Get("/tags", s.tagsPage)
 		r.Get("/series", s.seriesPage)
 		r.Get("/upload", s.uploadPage)

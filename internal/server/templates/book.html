@@ -28,6 +28,7 @@
     <a href="/files/{{.Book.ID}}" class="btn">Download EPUB</a>
     <a href="/book/{{.Book.ID}}/edit" class="btn">Edit</a>
     <form method="post" action="/book/{{.Book.ID}}/delete" class="inline" onsubmit="return confirm('Delete this book?')">
+        <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
         <button type="submit" class="btn btn-danger">Delete</button>
     </form>
 </div>

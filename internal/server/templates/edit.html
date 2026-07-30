@@ -3,6 +3,7 @@
 <h1>Edit: {{.Book.Title}}</h1>
 
 <form method="post" action="/book/{{.Book.ID}}/edit" class="edit-form">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
     <fieldset>
         <legend>Metadata</legend>
         <label><span>Title</span><input type="text" name="title" value="{{.Book.Title}}"></label>
@@ -40,6 +41,7 @@
 
 <h2>Cover</h2>
 <form method="post" action="/book/{{.Book.ID}}/cover" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
     <label>
         <span>New cover (JPEG):</span>
         <input type="file" name="cover" accept="image/jpeg" required>
