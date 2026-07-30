@@ -1,0 +1,26 @@
+{{template "base" .}}
+{{define "title"}}{{.Book.Title}}{{end}}
+{{define "content"}}
+<h1>{{.Book.Title}}</h1>
+<p class="author">{{.Book.Author}}</p>
+{{if .Book.Series}}
+<p class="series">{{.Book.Series}} #{{.Book.SeriesIndex}}</p>
+{{end}}
+{{if .Book.Description}}
+<p>{{.Book.Description}}</p>
+{{end}}
+<dl>
+    {{if .Book.ISBN}}<dt>ISBN</dt><dd>{{.Book.ISBN}}</dd>{{end}}
+    {{if .Book.Publisher}}<dt>Publisher</dt><dd>{{.Book.Publisher}}</dd>{{end}}
+    {{if .Book.Published}}<dt>Published</dt><dd>{{.Book.Published}}</dd>{{end}}
+    {{if .Book.Pages}}<dt>Pages</dt><dd>{{.Book.Pages}}</dd>{{end}}
+    {{if .Book.Rating}}<dt>Rating</dt><dd>{{.Book.Rating}}/5</dd>{{end}}
+</dl>
+{{if .Tags}}
+<h3>Tags</h3>
+<ul>
+{{range .Tags}}<li>{{.Name}}</li>{{end}}
+</ul>
+{{end}}
+<a href="/files/{{.Book.ID}}.epub">Download EPUB</a>
+{{end}}

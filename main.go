@@ -16,6 +16,7 @@ import (
 	"github.com/jason/incipit/internal/epub"
 	"github.com/jason/incipit/internal/lookup"
 	"github.com/jason/incipit/internal/models"
+	"github.com/jason/incipit/internal/server"
 	"github.com/jason/incipit/internal/storage"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,7 +38,7 @@ func main() {
 	case "remove-user":
 		runRemoveUser(os.Args[2:])
 	case "serve":
-		fmt.Println("serve: not yet implemented")
+		runServe()
 	case "parse":
 		runParse(os.Args[2:])
 	case "lookup":
@@ -163,6 +164,19 @@ func hashPassword(plaintext string) (string, error) {
 	}
 
 	return string(bcryptHash), nil
+}
+
+func runServe() {
+	cfg := config.Load()
+	srv, err := server.New(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error creating server: %v\n", err)
+		os.Exit(1)
+	}
+	if err := srv.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func runParse(args []string) {
